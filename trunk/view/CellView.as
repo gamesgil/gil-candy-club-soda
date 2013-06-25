@@ -16,7 +16,6 @@ package view
 		
 		public function CellView() 
 		{
-			
 		}
 		
 		public function set content(value:String):void 

@@ -4,6 +4,7 @@ package view
 	import flash.display.DisplayObject;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -12,6 +13,7 @@ package view
 	import model.types.CellType;
 	import model.types.Pattern;
 	import model.types.Speed;
+	import model.types.Status;
 	
 	/**
 	 * ...
@@ -20,24 +22,25 @@ package view
 	public class BoardView extends Sprite 
 	{
 		static private var cellRect:Rectangle;
-		static private var STATUS_BUSY:String = "busy";
-		static private var STATUS_READY:String = "ready";
 		
-		
+		private var m_queuedCells:uint;
 		private var m_status:String;
 		private var m_board:Board;
 		private var m_pos1:Point;
 		private var m_pos2:Point;
 		private var m_frame:MovieClip;
+		private var m_nextFunction:Function;
 		
 		public function BoardView() 
 		{
 			m_frame = new mcFrame();
+			queuedCells = 0;
 		}
 		
 		public function init(board:Board):void
 		{
 			this.board = board;
+			this.board.boardView = this;
 			
 			var cell:CellView;
 			var point:Point;
@@ -61,7 +64,7 @@ package view
 				}
 			}
 			
-			status = STATUS_READY;
+			status = Status.READY;
 			
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
@@ -69,7 +72,7 @@ package view
 		
 		private function onMouseDown(e:MouseEvent):void 
 		{
-			if (status == STATUS_READY)
+			if (status == Status.READY)
 			{
 				var curPos:Point = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
 			
@@ -92,7 +95,7 @@ package view
 		{
 			if ((Math.abs(m_pos1.x - m_pos2.x) == 1 && m_pos1.y == m_pos2.y) || (Math.abs(m_pos1.y - m_pos2.y) == 1 && m_pos1.x == m_pos2.x))
 			{
-				status = STATUS_BUSY;
+				status = Status.BUSY;
 				
 				board.swapCells(m_pos1, m_pos2);
 				
@@ -104,7 +107,7 @@ package view
 		
 		private function checkPatterns():void 
 		{
-			board.findAndRemoveNextPattern();
+			board.findAndRemoveNextPattern([Pattern.H_TRIPLET, Pattern.V_TRIPLET]);
 		}
 		
 		private function clearMarks():void 
@@ -118,7 +121,7 @@ package view
 		
 		private function onMouseUp(e:MouseEvent):void 
 		{
-			if (status == STATUS_READY)
+			if (status == Status.READY)
 			{
 				var curPos:Point = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
 			
@@ -166,6 +169,11 @@ package view
 			return pos.y * board.width + pos.x;
 		}
 		
+		public function waitAndCheck():void 
+		{
+			Tweener.addTween(this, { delay: Speed.CHECK_SPEED, onComplete: checkPatterns } );
+		}
+		
 		public function get board():Board 
 		{
 			return m_board;
@@ -184,6 +192,37 @@ package view
 		public function set status(value:String):void 
 		{
 			m_status = value;
+		}
+		
+		public function get queuedCells():uint 
+		{
+			return m_queuedCells;
+		}
+		
+		public function set queuedCells(value:uint):void 
+		{
+			m_queuedCells = value;
+		}
+		
+		public function get nextFunction():Function 
+		{
+			return m_nextFunction;
+		}
+		
+		public function set nextFunction(value:Function):void 
+		{
+			m_nextFunction = value;
+			
+			addEventListener(Event.ENTER_FRAME, processNextFunction);
+		}
+		
+		private function processNextFunction(e:Event):void 
+		{
+			removeEventListener(Event.ENTER_FRAME, processNextFunction);
+			
+			nextFunction();
+			
+			m_nextFunction = null;
 		}
 	}
 

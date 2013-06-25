@@ -4,6 +4,8 @@ package model
 	import flash.geom.Rectangle;
 	import model.types.CellType;
 	import model.types.Pattern;
+	import model.types.Status;
+	import view.BoardView;
 	import view.CellView;
 	/**
 	 * ...
@@ -14,7 +16,7 @@ package model
 		private var m_width:uint;
 		private var m_height:uint;
 		private var m_cells:Array;
-		
+		private var m_boardView:BoardView;
 		private var dummyContent:String;
 		
 		
@@ -26,10 +28,10 @@ package model
 			cells = [];
 			
 			dummyContent = "";
+			dummyContent += "0122";
+			dummyContent += "1112";
+			dummyContent += "1220";
 			dummyContent += "0121";
-			dummyContent += "2301";
-			dummyContent += "1230";
-			dummyContent += "0113";
 			dummyContent += "1230";
 		}
 		
@@ -80,6 +82,16 @@ package model
 			m_cells = value;
 		}
 		
+		public function get boardView():BoardView 
+		{
+			return m_boardView;
+		}
+		
+		public function set boardView(value:BoardView):void 
+		{
+			m_boardView = value;
+		}
+		
 		public function getCellAt(point:Point):Cell
 		{
 			var result:Cell;
@@ -89,22 +101,6 @@ package model
 				if (Cell(m_cells[i]).pos.equals(point))
 				{
 					result = m_cells[i];
-					break;
-				}
-			}
-			
-			return result;
-		}
-		
-		public function isThereAnyPattern():Array
-		{
-			var result:Array;
-			
-			for (var i:int = 0; i < Pattern.ALL_PATTERNS.length; i++) 
-			{
-				if (findPattern(Pattern.ALL_PATTERNS[i]))
-				{
-					result = Pattern.ALL_PATTERNS[i];
 					break;
 				}
 			}
@@ -160,52 +156,6 @@ package model
 			return result;
 		}
 		
-		public function removePattern(point:Point, pattern:Array):void 
-		{
-			var newPoint:Point;
-			
-			for (var i:int = 0; i < pattern.length; i++) 
-			{
-				newPoint = point.add(pattern[i]);
-				
-				getCellAt(newPoint).pos = new Point(newPoint.x, newPoint.y - height);
-			}
-		}
-		
-		public function findNextHole(column:uint):Rectangle
-		{
-			var result:Rectangle;
-			
-			outerloop: for (var j:int = 0; j < height; j++) 
-			{
-				result = new Rectangle(column, j, 1, 0);
-				
-				if (getCellAt(new Point(result.x, result.y)).content == null)
-				{
-					for (var k:int = j; k < height; k++) 
-					{
-						if (getCellAt(new Point(column, k)).content == null)
-						{
-							result.height++;
-						}
-						else
-						{
-							break outerloop;
-						}
-					}
-					
-					break outerloop;
-				}
-			}
-			
-			if (result && result.height == 0)
-			{
-				result = null;
-			}
-			
-			return result;
-		}
-		
 		public function swapCells(pos1:Point, pos2:Point):void 
 		{
 			var cell1:Cell = getCellAt(pos1);
@@ -215,22 +165,151 @@ package model
 			cell2.goToNewPos(pos1);
 		}
 		
-		public function findAndRemoveNextPattern():void 
+		public function findAndRemoveNextPattern(patterns:Array):void 
 		{
-			var patterns:Array = [Pattern.H_TRIPLET, Pattern.V_TRIPLET];
+			var pattern:Array;
 			var point:Point;
 			
-			for (var i:int = 0; i < patterns.length; i++) 
+			if (patterns.length)
 			{
-				point = findPattern(patterns[i]);
+				pattern = patterns[0];
+				point = findPattern(pattern);
 				
 				if (point)
 				{
-					removePattern(point, patterns[i]);
-					break;
+					trace("found @ " + point);
+					removePattern(point, pattern);
+					//fillHoles();
+					boardView.nextFunction = fillHoles;
+				}
+				else
+				{
+					trace("didn't find");
+					patterns.shift();
+					findAndRemoveNextPattern(patterns);
+				}
+			}
+			else
+			{
+				trace("no patterns left");
+				if (boardView)
+				{
+					boardView.status = Status.READY;
 				}
 			}
 		}
+		
+		private function removePattern(point:Point, pattern:Array):void 
+		{
+			var newPoint:Point;
+			
+			for (var i:int = 0; i < pattern.length; i++) 
+			{
+				newPoint = point.add(pattern[i]);
+				
+				getCellAt(newPoint).content = CellType.ALL[Math.floor(Math.random() * CellType.ALL.length)];
+				getCellAt(newPoint).pos = new Point(newPoint.x, getMinimalRowAtColumn(newPoint.x) - 1);
+			}
+		}
+		
+		private function getMinimalRowAtColumn(column:uint):int
+		{
+			var result:int = 0;
+			var potentials:Array = getAllCellsAtColumn(column);
+			
+			for (var i:int = 0; i < potentials.length; i++) 
+			{
+				if (Cell(potentials[i]).pos.y < result)
+				{
+					result = Cell(potentials[i]).pos.y;
+				}
+			}
+			
+			return result;
+		}
+		
+		private function fillHoles():void 
+		{
+			for (var i:int = 0; i < width; i++) 
+			{
+				fillHoleOnColumn(i);
+			}
+			
+			boardView.waitAndCheck();
+		}
+		
+		private function fillHoleOnColumn(column:uint):void
+		{
+			//work bottom up
+			var cell:Cell;
+			var point:Point;
+			var drop:uint = 0;
+			var columnCells:Array;
+			
+			for (var i:int = 0; i < height; i++) 
+			{
+				point = new Point(column, height - i - 1);
+				cell = getCellAt(point);
+				
+				if (!cell)
+				{
+					drop++;
+					
+					columnCells = getAllCellsAtColumnAbove(column, point.y + 1);
+					
+					for (var j:int = 0; j < columnCells.length; j++) 
+					{
+						Cell(columnCells[j]).drop = drop;
+					}
+				}
+				
+			}
+			
+			applyDropOnColumn(column);
+		}
+		
+		private function applyDropOnColumn(column:uint):void 
+		{
+			var columnCells:Array = getAllCellsAtColumn(column);
+			
+			for (var i:int = 0; i < columnCells.length; i++) 
+			{
+				Cell(columnCells[i]).goToNewPos(new Point(Cell(columnCells[i]).pos.x, Cell(columnCells[i]).pos.y + Cell(columnCells[i]).drop));
+				Cell(columnCells[i]).drop = 0;
+			}
+		}
+		
+		private function getAllCellsAtColumn(column:uint):Array
+		{
+			var result:Array = [];
+			
+			for (var i:int = 0; i < m_cells.length; i++) 
+			{
+				if (Cell(m_cells[i]).pos.x == column)
+				{
+					result.push(m_cells[i]);
+				}
+			}
+			
+			return result;
+		}
+		
+		private function getAllCellsAtColumnAbove(column:uint, row:uint):Array
+		{
+			var result:Array = [];
+			var potentials:Array = getAllCellsAtColumn(column);
+			
+			for (var i:int = 0; i < potentials.length; i++) 
+			{
+				if (Cell(potentials[i]).pos.y < row)
+				{
+					result.push(potentials[i]);
+				}
+			}
+			
+			return result;
+		}
+		
 	}
 
 }
