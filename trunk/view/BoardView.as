@@ -14,6 +14,7 @@ package view
 	import model.types.Pattern;
 	import model.types.Speed;
 	import model.types.Status;
+	import model.types.Tools;
 	
 	/**
 	 * ...
@@ -23,6 +24,7 @@ package view
 	{
 		static private var cellRect:Rectangle;
 		
+		private var m_tool:String;
 		private var m_queuedCells:uint;
 		private var m_status:String;
 		private var m_board:Board;
@@ -66,8 +68,8 @@ package view
 			
 			status = Status.READY;
 			
-			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-			addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown, false, 0, true);
+			addEventListener(MouseEvent.MOUSE_UP, onMouseUp, false, 0, true);
 		}
 		
 		private function onMouseDown(e:MouseEvent):void 
@@ -76,18 +78,33 @@ package view
 			{
 				var curPos:Point = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
 			
-				if (!m_pos1)
+				switch(tool)
 				{
-					m_pos1 = curPos;
+					case Tools.BREAKER:
+						board.removePattern(curPos, [new Point(0, 0)]);
+						break;
+						
+					case Tools.BOMB:
+						board.removePattern(curPos, Pattern.BOMB);
+						break;
+						
+					default:
+						if (!m_pos1)
+						{
+							m_pos1 = curPos;
+						
+							mark(board.getCellAt(m_pos1).clip);
+						}
+						else
+						{
+							m_pos2 = curPos;
+							
+							tryToSwap();
+						}
+						break;
+				}
 				
-					mark(board.getCellAt(m_pos1).clip);
-				}
-				else
-				{
-					m_pos2 = curPos;
-					
-					tryToSwap();
-				}
+				tool = null;
 			}
 		}
 		
@@ -213,7 +230,17 @@ package view
 		{
 			m_nextFunction = value;
 			
-			addEventListener(Event.ENTER_FRAME, processNextFunction);
+			addEventListener(Event.ENTER_FRAME, processNextFunction, false, 0, true);
+		}
+		
+		public function get tool():String 
+		{
+			return m_tool;
+		}
+		
+		public function set tool(value:String):void 
+		{
+			m_tool = value;
 		}
 		
 		private function processNextFunction(e:Event):void 

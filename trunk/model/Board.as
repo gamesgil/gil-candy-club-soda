@@ -180,7 +180,6 @@ package model
 					trace("found @ " + point);
 					removePattern(point, pattern);
 					//fillHoles();
-					boardView.nextFunction = fillHoles;
 				}
 				else
 				{
@@ -199,16 +198,27 @@ package model
 			}
 		}
 		
-		private function removePattern(point:Point, pattern:Array):void 
+		public function removePattern(point:Point, pattern:Array):void 
 		{
 			var newPoint:Point;
+			var cell:Cell;
 			
 			for (var i:int = 0; i < pattern.length; i++) 
 			{
 				newPoint = point.add(pattern[i]);
 				
-				getCellAt(newPoint).content = CellType.ALL[Math.floor(Math.random() * CellType.ALL.length)];
-				getCellAt(newPoint).pos = new Point(newPoint.x, getMinimalRowAtColumn(newPoint.x) - 1);
+				if (newPoint.x >= 0 && newPoint.x < width && newPoint.y >= 0 && newPoint.y < height)
+				{
+					cell = getCellAt(newPoint);
+					
+					cell.content = CellType.ALL[Math.floor(Math.random() * CellType.ALL.length)];
+					cell.pos = new Point(newPoint.x, getMinimalRowAtColumn(newPoint.x) - 1);
+				}
+			}
+			
+			if (cell)
+			{
+				boardView.nextFunction = fillHoles;
 			}
 		}
 		

@@ -7,6 +7,7 @@ package
 	import model.Board;
 	import model.Cell;
 	import model.types.Pattern;
+	import model.types.Tools;
 	import view.BoardView;
 	/**
 	 * ...
@@ -29,7 +30,23 @@ package
 			boardView.y = 200;
 			addChild(boardView);
 			
-			//stage.addEventListener(MouseEvent.CLICK, checkPattern);
+			mcHammer.addEventListener(MouseEvent.CLICK, selectSpecial);
+			mcBomb.addEventListener(MouseEvent.CLICK, selectSpecial);
+		}
+		
+		private function selectSpecial(e:MouseEvent):void 
+		{
+			switch (e.currentTarget)
+			{
+				case mcHammer:
+					boardView.tool = Tools.BREAKER;
+					break;
+					
+				case mcBomb:
+					boardView.tool = Tools.BOMB;
+					break;
+			}
+			
 		}
 		
 	}

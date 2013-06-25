@@ -16,6 +16,8 @@ package model.types
 		static public const H_TRIPLET:Array = [new Point(0, 0), new Point(1, 0), new Point(2, 0)];
 		static public const V_TRIPLET:Array = [new Point(0, 0), new Point(0, 1), new Point(0, 2)];
 		
+		static public const BOMB:Array = [new Point( -1, 0), new Point(0, -1), new Point(0, 0), new Point(1, 0), new Point(0, 1)];
+		
 		static public const ALL_PATTERNS:Array = [H_FIVELET, V_FIVELET, H_QUADRUPLET, V_QUADRUPLET, H_TRIPLET, V_TRIPLET];
 	}
 
