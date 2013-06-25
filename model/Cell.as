@@ -14,6 +14,7 @@ package model
 		private var m_frozen:Boolean;
 		private var m_content:String;
 		private var m_clip:CellView;
+		private var m_drop:uint;
 		
 		public function Cell(type:String, clip:CellView) 
 		{
@@ -99,6 +100,18 @@ package model
 			{
 				clip.setPos(value);
 			}
+		}
+		
+		public function get drop():uint 
+		{
+			return m_drop;
+		}
+		
+		public function set drop(value:uint):void 
+		{
+			m_drop = value;
+			
+			//trace(pos + " will drop: " + drop);
 		}
 		
 		public function goToNewPos(value:Point):void 
