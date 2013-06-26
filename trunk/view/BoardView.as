@@ -1,6 +1,8 @@
 package view 
 {
 	import caurina.transitions.Tweener;
+	import flash.display.Bitmap;
+	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
@@ -8,6 +10,7 @@ package view
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import gil.Utils;
 	import model.Board;
 	import model.Cell;
 	import model.types.CellType;
@@ -15,6 +18,7 @@ package view
 	import model.types.Speed;
 	import model.types.Status;
 	import model.types.Tools;
+	import view.effects.ShakerManager;
 	
 	/**
 	 * ...
@@ -32,6 +36,7 @@ package view
 		private var m_pos2:Point;
 		private var m_frame:MovieClip;
 		private var m_nextFunction:Function;
+		private var m_mask:Sprite;
 		
 		public function BoardView() 
 		{
@@ -66,7 +71,7 @@ package view
 				}
 			}
 			
-			status = Status.READY;
+			setReady();
 			
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown, false, 0, true);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp, false, 0, true);
@@ -76,6 +81,8 @@ package view
 		{
 			if (status == Status.READY)
 			{
+				unshake();
+				
 				var curPos:Point = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
 			
 				switch(tool)
@@ -105,7 +112,14 @@ package view
 				}
 				
 				tool = null;
+				
 			}
+		}
+		
+		private function unshake():void 
+		{
+			Tweener.removeTweens(this);
+			ShakerManager.destroyAll();
 		}
 		
 		private function tryToSwap():void 
@@ -115,16 +129,45 @@ package view
 				status = Status.BUSY;
 				
 				board.swapCells(m_pos1, m_pos2);
+			
+				Tweener.addTween(this, { delay: Speed.SWAP_SPEED, onComplete: checkPatternsAfterSwap } );
+			}
+		}
+		
+		private function checkPatternsAfterSwap():void 
+		{
+			if (board.isThereAnyPattern())
+			{
+				checkPatterns();
+			}
+			else
+			{
+				board.swapCells(m_pos1, m_pos2);
 				
-				Tweener.addTween(this, { delay: Speed.SWAP_SPEED, onComplete: checkPatterns } );
+				Tweener.addTween(this, { delay: Speed.SWAP_SPEED, onComplete: setReady } );
 			}
 			
 			clearMarks();
 		}
 		
+		private function highlightCell():void 
+		{
+			var point:Point = new Point(Math.floor(Math.random() * board.width), Math.floor(Math.random() * board.height));
+			var clip:CellView = board.getCellAt(point).clip;
+			
+			ShakerManager.shake(clip);
+		}
+		
+		public function setReady():void 
+		{
+			status = Status.READY;
+			
+			Tweener.addTween(this, { delay: 3, onComplete: highlightCell } );
+		}
+		
 		private function checkPatterns():void 
 		{
-			board.findAndRemoveNextPattern([Pattern.H_TRIPLET, Pattern.V_TRIPLET]);
+			board.findAndRemoveNextPattern(Utils.copyArray(Pattern.ALL_PATTERNS));
 		}
 		
 		private function clearMarks():void 
@@ -250,6 +293,16 @@ package view
 			nextFunction();
 			
 			m_nextFunction = null;
+		}
+		
+		public function createMask():void
+		{
+			m_mask = new Sprite();
+			m_mask.graphics.beginFill(0x000000);
+			m_mask.graphics.drawRect(0, 0, width, height + 10);
+			m_mask.x = getBounds(parent).x;
+			m_mask.y = getBounds(parent).y - 5;
+			mask = m_mask;
 		}
 	}
 

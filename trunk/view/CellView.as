@@ -78,7 +78,7 @@ package view
 		
 		public function goToNewPos(pos:Point):void
 		{
-			Tweener.addTween(this, { time: 1, x: boardPos.x + pos.x * width, y: boardPos.y + pos.y * height } );
+			Tweener.addTween(this, { time: 1, x: boardPos.x + pos.x * width, y: boardPos.y + pos.y * height, transition: "easeOutBounce" } );
 		}
 		
 		public function get boardPos():Point 

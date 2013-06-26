@@ -108,6 +108,24 @@ package model
 			return result;
 		}
 		
+		public function isThereAnyPattern():Boolean
+		{
+			var result:Boolean = false;
+			var point:Point;
+			
+			for (var i:int = 0; i < Pattern.ALL_PATTERNS.length; i++) 
+			{
+				point = findPattern(Pattern.ALL_PATTERNS[i]);
+				
+				if (point)
+				{
+					result = true;
+					break;
+				}
+			}
+			
+			return result;
+		}
 		public function findPattern(pattern:Array):Point
 		{
 			var result:Point;
@@ -193,7 +211,7 @@ package model
 				trace("no patterns left");
 				if (boardView)
 				{
-					boardView.status = Status.READY;
+					boardView.setReady();
 				}
 			}
 		}

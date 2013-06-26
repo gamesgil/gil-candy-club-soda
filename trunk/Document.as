@@ -24,11 +24,12 @@ package
 			board = new Board(4, 5);
 			
 			boardView = new BoardView();
-			boardView.init(board);
-			
-			boardView.x = 50;
-			boardView.y = 200;
 			addChild(boardView);
+			boardView.init(board);
+			boardView.x = 50;
+			boardView.y = 100;
+			
+			boardView.createMask();
 			
 			mcHammer.addEventListener(MouseEvent.CLICK, selectSpecial);
 			mcBomb.addEventListener(MouseEvent.CLICK, selectSpecial);
