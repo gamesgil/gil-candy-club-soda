@@ -29,7 +29,7 @@ package
 			boardView.x = 50;
 			boardView.y = 100;
 			
-			boardView.createMask();
+			//boardView.createMask();
 			
 			mcHammer.addEventListener(MouseEvent.CLICK, selectSpecial);
 			mcBomb.addEventListener(MouseEvent.CLICK, selectSpecial);

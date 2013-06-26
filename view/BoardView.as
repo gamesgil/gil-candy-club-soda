@@ -62,7 +62,7 @@ package view
 					cell.boardPos = originPos;
 					addChild(cell);
 					
-					board.addCell(CellType.REGULAR, point, cell);
+					board.getCellAt(point).clip = cell;
 					
 					if (!cellRect)
 					{
@@ -72,6 +72,7 @@ package view
 			}
 			
 			setReady();
+			
 			
 			addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown, false, 0, true);
 			addEventListener(MouseEvent.MOUSE_UP, onMouseUp, false, 0, true);
@@ -138,7 +139,7 @@ package view
 		{
 			if (board.isThereAnyPattern())
 			{
-				checkPatterns();
+				board.checkPatterns();
 			}
 			else
 			{
@@ -163,11 +164,6 @@ package view
 			status = Status.READY;
 			
 			Tweener.addTween(this, { delay: 3, onComplete: highlightCell } );
-		}
-		
-		private function checkPatterns():void 
-		{
-			board.findAndRemoveNextPattern(Utils.copyArray(Pattern.ALL_PATTERNS));
 		}
 		
 		private function clearMarks():void 
@@ -231,7 +227,7 @@ package view
 		
 		public function waitAndCheck():void 
 		{
-			Tweener.addTween(this, { delay: Speed.CHECK_SPEED, onComplete: checkPatterns } );
+			Tweener.addTween(this, { delay: Speed.CHECK_SPEED, onComplete: board.checkPatterns } );
 		}
 		
 		public function get board():Board 
