@@ -16,10 +16,9 @@ package model
 		private var m_clip:CellView;
 		private var m_drop:uint;
 		
-		public function Cell(type:String, clip:CellView) 
+		public function Cell(type:String) 
 		{
 			this.type = type;
-			this.clip = clip;
 		}
 		
 		public function toString():String
@@ -85,6 +84,10 @@ package model
 		public function set clip(value:CellView):void 
 		{
 			m_clip = value;
+			
+			m_clip.type = type;
+			m_clip.content = content;
+			m_clip.setPos(pos);
 		}
 		
 		public function get pos():Point 

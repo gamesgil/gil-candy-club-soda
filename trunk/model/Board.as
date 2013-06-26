@@ -1,7 +1,9 @@
 package model 
 {
+	import flash.events.EventDispatcher;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import gil.Utils;
 	import model.types.CellType;
 	import model.types.Pattern;
 	import model.types.Status;
@@ -11,7 +13,7 @@ package model
 	 * ...
 	 * @author gil
 	 */
-	public class Board 
+	public class Board //extends EventDispatcher
 	{
 		private var m_width:uint;
 		private var m_height:uint;
@@ -33,16 +35,25 @@ package model
 			dummyContent += "1220";
 			dummyContent += "0121";
 			dummyContent += "1230";
+			
+			for (var i:int = 0; i < height; i++) 
+			{
+				for (var j:int = 0; j < width; j++) 
+				{
+					addCell(CellType.REGULAR, new Point(j, i));
+				}
+			}
+			
+			checkPatterns();
 		}
 		
-		public function addCell(type:String, pos:Point, clip:CellView):void
+		public function addCell(type:String, pos:Point):void
 		{
 			var cell:Cell;
-			cell = new Cell(CellType.REGULAR, clip);
+			cell = new Cell(type);
 			cell.content = CellType.ALL[uint(dummyContent.charAt(pos.y * width + pos.x))];
 			cell.pos = pos;
 			cells.push(cell);
-			
 		}
 		
 		public function toString():String
@@ -106,6 +117,11 @@ package model
 			}
 			
 			return result;
+		}
+		
+		public function checkPatterns():void 
+		{
+			findAndRemoveNextPattern(Utils.copyArray(Pattern.ALL_PATTERNS));
 		}
 		
 		public function isThereAnyPattern():Boolean
@@ -198,6 +214,14 @@ package model
 					trace("found @ " + point);
 					removePattern(point, pattern);
 					//fillHoles();
+					
+					if (!boardView)
+					{
+						if (isThereAnyPattern())
+						{
+							checkPatterns();
+						}
+					}
 				}
 				else
 				{
@@ -234,9 +258,13 @@ package model
 				}
 			}
 			
-			if (cell)
+			if (boardView && cell)
 			{
 				boardView.nextFunction = fillHoles;
+			}
+			else
+			{
+				fillHoles();
 			}
 		}
 		
@@ -263,7 +291,10 @@ package model
 				fillHoleOnColumn(i);
 			}
 			
-			boardView.waitAndCheck();
+			if (boardView)
+			{
+				boardView.waitAndCheck();
+			}
 		}
 		
 		private function fillHoleOnColumn(column:uint):void
