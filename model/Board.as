@@ -31,7 +31,7 @@ package model
 			
 			dummyContent = "";
 			dummyContent += "0122";
-			dummyContent += "1112";
+			dummyContent += "1012";
 			dummyContent += "1220";
 			dummyContent += "0121";
 			dummyContent += "1230";
@@ -43,6 +43,8 @@ package model
 					addCell(CellType.REGULAR, new Point(j, i));
 				}
 			}
+			
+			getCellAt(new Point(1, 1)).locks = 1;
 			
 			checkPatterns();
 		}
@@ -149,34 +151,46 @@ package model
 			var point:Point;
 			var content:String;
 			var matches:uint;
+			var cell:Cell;
 			
 			outerloop: for (var i:int = 0; i < height; i++) 
 			{
 				for (var j:int = 0; j < width; j++) 
 				{
 					refPoint = new Point(j, i);
-					content = getCellAt(refPoint).content;
-					matches = 1;
+					cell = getCellAt(refPoint);
 					
-					if (content)
+					if (cell)
 					{
-						for (var k:int = 1; k < pattern.length; k++) //no need to check the origin!
+						content = getCellAt(refPoint).content;
+						matches = 1;
+					
+						if (content)
 						{
-							point = refPoint.add(pattern[k]);
-							
-							//check if falls out of bounds
-							if (point.x < width && point.x >= 0 && point.y < height && point.y >= 0)
+							for (var k:int = 1; k < pattern.length; k++) //no need to check the origin!
 							{
-								if (getCellAt(point).content == content)
+								point = refPoint.add(pattern[k]);
+								
+								//check if falls out of bounds
+								if (point.x < width && point.x >= 0 && point.y < height && point.y >= 0)
 								{
-									matches++;
-								}
-								else
-								{
-									break;
+									cell = getCellAt(point);
+									
+									if (cell)
+									{
+										if (cell.content == content)
+										{
+											matches++;
+										}
+										else
+										{
+											break;
+										}
+									}
 								}
 							}
 						}
+					
 						
 						if (matches == pattern.length)
 						{
@@ -211,7 +225,7 @@ package model
 				
 				if (point)
 				{
-					trace("found @ " + point);
+					//trace("found @ " + point);
 					removePattern(point, pattern);
 					//fillHoles();
 					
@@ -225,7 +239,7 @@ package model
 				}
 				else
 				{
-					trace("didn't find");
+					//trace("didn't find");
 					patterns.shift();
 					findAndRemoveNextPattern(patterns);
 				}
@@ -305,7 +319,7 @@ package model
 			var drop:uint = 0;
 			var columnCells:Array;
 			
-			for (var i:int = 0; i < height; i++) 
+			outerloop: for (var i:int = 0; i < height; i++) 
 			{
 				point = new Point(column, height - i - 1);
 				cell = getCellAt(point);
@@ -318,10 +332,19 @@ package model
 					
 					for (var j:int = 0; j < columnCells.length; j++) 
 					{
-						Cell(columnCells[j]).drop = drop;
+						if (!Cell(columnCells[j]).locks)
+						{
+							Cell(columnCells[j]).drop = drop;
+							trace("DROP: " + Cell(columnCells[j]).pos);
+						}
+						else
+						{
+							trace("BREAK: " + Cell(columnCells[j]).pos);
+							drop = 0;
+							break outerloop;
+						}
 					}
 				}
-				
 			}
 			
 			applyDropOnColumn(column);
@@ -349,6 +372,9 @@ package model
 					result.push(m_cells[i]);
 				}
 			}
+			
+			result.sortOn("pos", Array.DESCENDING);
+			
 			
 			return result;
 		}

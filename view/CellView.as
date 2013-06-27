@@ -13,6 +13,8 @@ package view
 	public class CellView extends Sprite 
 	{
 		private var m_boardPos:Point;
+		private var m_lock1:MovieClip;
+		private var m_lock2:MovieClip;
 		
 		public function CellView() 
 		{
@@ -81,6 +83,22 @@ package view
 			Tweener.addTween(this, { time: 1, x: boardPos.x + pos.x * width, y: boardPos.y + pos.y * height, transition: "easeOutBounce" } );
 		}
 		
+		public function set locks(locks:uint):void
+		{
+			if (locks && !m_lock1)
+			{
+				m_lock1 = new mcLock();
+				addChild(m_lock1);
+			}
+			
+			if (locks == 2)
+			{
+				m_lock2 = new mcLock();
+				m_lock2.rotation = 90;
+				addChild(m_lock2);
+			}
+		}
+		
 		public function get boardPos():Point 
 		{
 			return m_boardPos;
@@ -90,7 +108,6 @@ package view
 		{
 			m_boardPos = value;
 		}
-		
 	}
 
 }
