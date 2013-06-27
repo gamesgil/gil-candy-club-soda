@@ -49,7 +49,8 @@ package view
 			this.board = board;
 			this.board.boardView = this;
 			
-			var cell:CellView;
+			var cell:Cell;
+			var cellView:CellView;
 			var point:Point;
 			var originPos:Point = new Point(x, y);
 			
@@ -58,16 +59,22 @@ package view
 				for (var j:int = 0; j < board.width; j++) 
 				{
 					point = new Point(j, i);
-					cell = new CellView();
-					cell.boardPos = originPos;
-					addChild(cell);
+					cellView = new CellView();
+					cellView.boardPos = originPos;
+					addChild(cellView);
 					
-					board.getCellAt(point).clip = cell;
+					cell = board.getCellAt(point);
 					
-					if (!cellRect)
+					if (cell)
 					{
-						cellRect = new Rectangle(0, 0, cell.width, cell.height);
+						cell.clip = cellView;
+					
+						if (!cellRect)
+						{
+							cellRect = new Rectangle(0, 0, cellView.width, cellView.height);
+						}
 					}
+					
 				}
 			}
 			
@@ -97,17 +104,20 @@ package view
 						break;
 						
 					default:
-						if (!m_pos1)
+						if (board.getCellAt(curPos).locks == 0)
 						{
-							m_pos1 = curPos;
-						
-							mark(board.getCellAt(m_pos1).clip);
-						}
-						else
-						{
-							m_pos2 = curPos;
+							if (!m_pos1)
+							{
+								m_pos1 = curPos;
 							
-							tryToSwap();
+								mark(board.getCellAt(m_pos1).clip);
+							}
+							else
+							{
+								m_pos2 = curPos;
+								
+								tryToSwap();
+							}
 						}
 						break;
 				}
@@ -181,13 +191,16 @@ package view
 			{
 				var curPos:Point = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
 			
-				if (m_pos1)
+				if (board.getCellAt(curPos).locks == 0)
 				{
-					if (!curPos.equals(m_pos1))
+					if (m_pos1)
 					{
-						m_pos2 = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
-						
-						tryToSwap();
+						if (!curPos.equals(m_pos1))
+						{
+							m_pos2 = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
+							
+							tryToSwap();
+						}
 					}
 				}
 			}

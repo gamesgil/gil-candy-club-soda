@@ -11,7 +11,7 @@ package model
 		private var m_type:String;
 		private var m_piece:String;
 		private var m_pos:Point;
-		private var m_frozen:Boolean;
+		private var m_locks:uint;
 		private var m_content:String;
 		private var m_clip:CellView;
 		private var m_drop:uint;
@@ -51,16 +51,6 @@ package model
 			m_piece = value;
 		}
 		
-		public function get frozen():Boolean 
-		{
-			return m_frozen;
-		}
-		
-		public function set frozen(value:Boolean):void 
-		{
-			m_frozen = value;
-		}
-		
 		public function get content():String 
 		{
 			return m_content;
@@ -87,6 +77,7 @@ package model
 			
 			m_clip.type = type;
 			m_clip.content = content;
+			m_clip.locks = locks;
 			m_clip.setPos(pos);
 		}
 		
@@ -112,9 +103,27 @@ package model
 		
 		public function set drop(value:uint):void 
 		{
-			m_drop = value;
+			if (!locks)
+			{
+				m_drop = value;
+			}
 			
 			//trace(pos + " will drop: " + drop);
+		}
+		
+		public function get locks():uint 
+		{
+			return m_locks;
+		}
+		
+		public function set locks(value:uint):void 
+		{
+			m_locks = Math.min(value, 2);
+			
+			if (clip)
+			{
+				clip.locks = m_locks;
+			}
 		}
 		
 		public function goToNewPos(value:Point):void 
