@@ -104,7 +104,7 @@ package view
 						break;
 						
 					default:
-						if (board.getCellAt(curPos).locks == 0)
+						if (board.getCellAt(curPos).locks == 0 && curPos.x >= 0 && curPos.x < board.width && curPos.y >= 0 && curPos.y < board.height)
 						{
 							if (!m_pos1)
 							{
@@ -163,10 +163,56 @@ package view
 		
 		private function highlightCell():void 
 		{
-			var point:Point = new Point(Math.floor(Math.random() * board.width), Math.floor(Math.random() * board.height));
-			var clip:CellView = board.getCellAt(point).clip;
+			var point1:Point;
+			var point2:Point;
+			var point3:Point;
+			var cell:CellView;
+			var hintPoint:Point;
 			
-			ShakerManager.shake(clip);
+			outerloop: for (var i:int = 0; i < board.height - 1; i++) 
+			{
+				for (var j:int = 0; j < board.width - 1; j++) 
+				{
+					point1 = new Point(j, i);
+					point2 = new Point(j + 1, i);
+					point3 = new Point(j, i + 1);
+					
+					hintPoint = board.virtualSwapAndCheck(point1, point2);
+					
+					if (hintPoint)
+					{
+						break outerloop;
+					}
+					else
+					{
+						hintPoint = board.virtualSwapAndCheck(point1, point3);
+						
+						if (hintPoint)
+						{
+							break outerloop;
+						}
+					}
+				}
+			}
+			
+			if (hintPoint)
+			{
+				ShakerManager.shake(board.getCellAt(hintPoint).clip);
+			}
+			else
+			{
+				trace("no hint, reshuffle in 1 sec...");
+				
+				Tweener.addTween(this, { delay: 1, onComplete: reshuffle } );
+			}
+		}
+		
+		private function reshuffle():void 
+		{
+			for (var i:int = 0; i < numChildren; i++) 
+			{
+				Tweener.addTween(getChildAt(i), { time: 1, x: width / 2, y: height / 2, onComplete: board.reshuffle } );
+			}
 		}
 		
 		public function setReady():void 
@@ -191,7 +237,7 @@ package view
 			{
 				var curPos:Point = localToModel((new Point(BoardView(e.currentTarget).mouseX, BoardView(e.currentTarget).mouseY)).add(new Point(cellRect.width / 2, cellRect.height / 2)));
 			
-				if (board.getCellAt(curPos).locks == 0)
+				if (board.getCellAt(curPos) && board.getCellAt(curPos).locks == 0 && curPos.x >= 0 && curPos.x < board.width && curPos.y >= 0 && curPos.y < board.height)
 				{
 					if (m_pos1)
 					{

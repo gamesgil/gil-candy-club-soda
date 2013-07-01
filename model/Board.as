@@ -30,11 +30,11 @@ package model
 			cells = [];
 			
 			dummyContent = "";
-			dummyContent += "0122";
-			dummyContent += "1012";
-			dummyContent += "1220";
-			dummyContent += "0121";
-			dummyContent += "1230";
+			dummyContent += "1102";
+			dummyContent += "0102";
+			dummyContent += "0031";
+			dummyContent += "1020";
+			dummyContent += "0131";
 			
 			for (var i:int = 0; i < height; i++) 
 			{
@@ -44,11 +44,12 @@ package model
 				}
 			}
 			
-			getCellAt(new Point(1, 1)).locks = 1;
+			getCellAt(new Point(1, 1)).type = CellType.HOLE;
+			getCellAt(new Point(1, 2)).locks = 1;
 			
 			checkPatterns();
 		}
-		
+
 		public function addCell(type:String, pos:Point):void
 		{
 			var cell:Cell;
@@ -144,6 +145,7 @@ package model
 			
 			return result;
 		}
+		
 		public function findPattern(pattern:Array):Point
 		{
 			var result:Point;
@@ -213,6 +215,29 @@ package model
 			cell2.goToNewPos(pos1);
 		}
 		
+		public function virtualSwapAndCheck(pos1:Point, pos2:Point):Point
+		{
+			var result:Point;
+			var cell1:Cell = getCellAt(pos1);
+			var cell2:Cell = getCellAt(pos2);
+			
+			if (cell1 && cell2 && !cell1.locks && !cell2.locks && cell1.type != CellType.HOLE && cell2.type != CellType.HOLE)
+			{
+				cell1.pos = pos2;
+				cell2.pos = pos1;
+				
+				if (isThereAnyPattern())
+				{
+					result = pos1;
+				}
+				
+				cell1.pos = pos1;
+				cell2.pos = pos2;
+			}
+			
+			return result;
+		}
+		
 		public function findAndRemoveNextPattern(patterns:Array):void 
 		{
 			var pattern:Array;
@@ -225,11 +250,9 @@ package model
 				
 				if (point)
 				{
-					//trace("found @ " + point);
 					removePattern(point, pattern);
-					//fillHoles();
 					
-					if (!boardView)
+					if (!boardView) //this handles automatic patterns when board is created and before the view is created
 					{
 						if (isThereAnyPattern())
 						{
@@ -239,14 +262,12 @@ package model
 				}
 				else
 				{
-					//trace("didn't find");
 					patterns.shift();
 					findAndRemoveNextPattern(patterns);
 				}
 			}
 			else
 			{
-				trace("no patterns left");
 				if (boardView)
 				{
 					boardView.setReady();
@@ -267,18 +288,50 @@ package model
 				{
 					cell = getCellAt(newPoint);
 					
-					cell.content = CellType.ALL[Math.floor(Math.random() * CellType.ALL.length)];
-					cell.pos = new Point(newPoint.x, getMinimalRowAtColumn(newPoint.x) - 1);
+					if (!cell.locks && cell.type != CellType.HOLE)
+					{
+						cell.content = CellType.ALL[Math.floor(Math.random() * CellType.ALL.length)];
+						cell.pos = new Point(newPoint.x, getMinimalRowAtColumn(newPoint.x) - 1);
+					}
+					else if (cell.locks)
+					{
+						cell.locks--;
+					}
 				}
 			}
 			
 			if (boardView && cell)
 			{
-				boardView.nextFunction = fillHoles;
+				boardView.nextFunction = fillEmptyCells;
 			}
 			else
 			{
-				fillHoles();
+				fillEmptyCells();
+			}
+		}
+		
+		public function reshuffle():void 
+		{
+			var positions:Array = [];
+			var rand:uint;
+			var pos:Point;
+			
+			for (var i:int = 0; i < m_cells.length; i++) 
+			{
+				if (Cell(m_cells[i]).type != CellType.HOLE)
+				{
+					positions.push(Cell(m_cells[i]).pos);
+				}
+			}
+			
+			while (positions.length) 
+			{
+				rand = Math.floor(Math.random() * positions.length);
+				pos = positions[rand];
+				
+				Cell(m_cells[positions.length - 1]).goToNewPos(pos);
+				
+				positions.splice(rand, 1)
 			}
 		}
 		
@@ -298,11 +351,11 @@ package model
 			return result;
 		}
 		
-		private function fillHoles():void 
+		private function fillEmptyCells():void 
 		{
 			for (var i:int = 0; i < width; i++) 
 			{
-				fillHoleOnColumn(i);
+				fillEmptyCellsOnColumn(i);
 			}
 			
 			if (boardView)
@@ -311,54 +364,84 @@ package model
 			}
 		}
 		
-		private function fillHoleOnColumn(column:uint):void
+		private function fillEmptyCellsOnColumn(column:uint):void
 		{
 			//work bottom up
 			var cell:Cell;
+			var empty:Point;
+			var emptyCell:Cell;
 			var point:Point;
-			var drop:uint = 0;
+			var newPoint:Point;
 			var columnCells:Array;
+			var check:uint = 0;
 			
-			outerloop: for (var i:int = 0; i < height; i++) 
+			while (getNextHoleOnColumn(column) && check < height)
 			{
-				point = new Point(column, height - i - 1);
-				cell = getCellAt(point);
+				check++;
 				
-				if (!cell)
+				empty = getNextHoleOnColumn(column);
+				
+				if (empty)
 				{
-					drop++;
+					cell = getNearestCellAbove(new Point(column, empty.y));
 					
-					columnCells = getAllCellsAtColumnAbove(column, point.y + 1);
-					
-					for (var j:int = 0; j < columnCells.length; j++) 
+					if (cell)
 					{
-						if (!Cell(columnCells[j]).locks)
-						{
-							Cell(columnCells[j]).drop = drop;
-							trace("DROP: " + Cell(columnCells[j]).pos);
-						}
-						else
-						{
-							trace("BREAK: " + Cell(columnCells[j]).pos);
-							drop = 0;
-							break outerloop;
-						}
+						cell.goToNewPos(empty);
+					}
+					else
+					{
+						check = height;
 					}
 				}
 			}
 			
-			applyDropOnColumn(column);
+			//applyDropOnColumn(column);
 		}
 		
-		private function applyDropOnColumn(column:uint):void 
+		private function getNearestCellAbove(point:Point):Cell 
 		{
-			var columnCells:Array = getAllCellsAtColumn(column);
+			var result:Cell;
+			var columnCells:Array = getAllCellsAtColumn(point.x);
 			
 			for (var i:int = 0; i < columnCells.length; i++) 
 			{
-				Cell(columnCells[i]).goToNewPos(new Point(Cell(columnCells[i]).pos.x, Cell(columnCells[i]).pos.y + Cell(columnCells[i]).drop));
-				Cell(columnCells[i]).drop = 0;
+				if (Cell(columnCells[i]).pos.y < point.y)
+				{
+					if(Cell(columnCells[i]).type != CellType.HOLE && !Cell(columnCells[i]).locks)
+					{
+						result = Cell(columnCells[i]);
+						break;
+					}
+					else if (Cell(columnCells[i]).locks)
+					{
+						break;
+					}
+				}
 			}
+			
+			return result;
+		}
+		
+		private function getNextHoleOnColumn(column:uint):Point
+		{
+			var result:Point;
+			var columnCells:Array = getAllCellsAtColumn(column);
+			var cell:Cell;
+			
+			//find the nearest cell above hole
+			for (var i:int = 0; i < height; i++) 
+			{
+				cell = getCellAt(new Point(column, height - i - 1));
+				
+				if (!cell)
+				{
+					result = new Point(column, height - i - 1);
+					break;
+				}
+			}
+			
+			return result;
 		}
 		
 		private function getAllCellsAtColumn(column:uint):Array
@@ -374,7 +457,6 @@ package model
 			}
 			
 			result.sortOn("pos", Array.DESCENDING);
-			
 			
 			return result;
 		}

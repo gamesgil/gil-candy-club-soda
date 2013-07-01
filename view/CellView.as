@@ -80,22 +80,44 @@ package view
 		
 		public function goToNewPos(pos:Point):void
 		{
-			Tweener.addTween(this, { time: 1, x: boardPos.x + pos.x * width, y: boardPos.y + pos.y * height, transition: "easeOutBounce" } );
+			Tweener.removeTweens(this);
+			
+			var transition:String = "easeOutBounce";
+			Tweener.addTween(this, { time: 1, x: boardPos.x + pos.x * width, y: boardPos.y + pos.y * height, transition: transition } );
 		}
 		
 		public function set locks(locks:uint):void
 		{
-			if (locks && !m_lock1)
+			if (locks)
 			{
-				m_lock1 = new mcLock();
-				addChild(m_lock1);
+				if (!m_lock1)
+				{
+					m_lock1 = new mcLock();
+					addChild(m_lock1);
+				}
+				
+				if (locks == 2)
+				{
+					m_lock2 = new mcLock();
+					m_lock2.rotation = 90;
+					addChild(m_lock2);
+				}
+				else if (m_lock2 && contains(m_lock2))
+				{
+					removeChild(m_lock2);
+				}
 			}
-			
-			if (locks == 2)
+			else
 			{
-				m_lock2 = new mcLock();
-				m_lock2.rotation = 90;
-				addChild(m_lock2);
+				if (m_lock1 && contains(m_lock1))
+				{
+					removeChild(m_lock1);
+				}
+				
+				if (m_lock2 && contains(m_lock2))
+				{
+					removeChild(m_lock2);
+				}
 			}
 		}
 		

@@ -1,6 +1,7 @@
 package model 
 {
 	import flash.geom.Point;
+	import model.types.CellType;
 	import view.CellView;
 	/**
 	 * ...
@@ -14,7 +15,6 @@ package model
 		private var m_locks:uint;
 		private var m_content:String;
 		private var m_clip:CellView;
-		private var m_drop:uint;
 		
 		public function Cell(type:String) 
 		{
@@ -34,6 +34,11 @@ package model
 		public function set type(value:String):void 
 		{
 			m_type = value;
+			
+			if (type == CellType.HOLE)
+			{
+				content = null;
+			}
 			
 			if (clip)
 			{
@@ -94,21 +99,6 @@ package model
 			{
 				clip.setPos(value);
 			}
-		}
-		
-		public function get drop():uint 
-		{
-			return m_drop;
-		}
-		
-		public function set drop(value:uint):void 
-		{
-			if (!locks)
-			{
-				m_drop = value;
-			}
-			
-			//trace(pos + " will drop: " + drop);
 		}
 		
 		public function get locks():uint 
