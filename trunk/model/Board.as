@@ -313,6 +313,7 @@ package model
 		public function reshuffle():void 
 		{
 			var positions:Array = [];
+			var reshuffledCells:Array = [];
 			var rand:uint;
 			var pos:Point;
 			
@@ -321,17 +322,18 @@ package model
 				if (Cell(m_cells[i]).type != CellType.HOLE)
 				{
 					positions.push(Cell(m_cells[i]).pos);
+					reshuffledCells.push(m_cells[i]);
 				}
 			}
 			
-			while (positions.length) 
+			reshuffledCells.unshift(reshuffledCells.pop());
+			
+			for (i = 0; i < reshuffledCells.length; i++)
 			{
-				rand = Math.floor(Math.random() * positions.length);
-				pos = positions[rand];
+				/*rand = Math.floor(Math.random() * positions.length);
+				pos = positions[rand];*/
 				
-				Cell(m_cells[positions.length - 1]).goToNewPos(pos);
-				
-				positions.splice(rand, 1)
+				Cell(reshuffledCells[i]).goToNewPos(positions[i]);
 			}
 		}
 		
